@@ -11,45 +11,62 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include <ctype.h>
+#include <errno.h>
 
-#define SERVER_PORT 1234
+#define SERVER_PORT 12345
 #define QUEUE_SIZE 5
-#define DATA_LEN 256
+#define LOGIN_LEN 32
+#define PASSWD_LEN 32
+#define MAX_USR_COUNT 128
 
 
 void handle_error(int exitCode){
-if(exitCode!=0){
-    fprintf(stderr, "Error: %s\n", strerror( exitCode ));
+if(exitCode<0){
+    fprintf(stderr, "Error: %s\n", strerror( errno ));
+    exit(1);
 }
 };
 
 //struktura zawierająca dane, które zostaną przekazane do wątku
-struct thread_data_t
+struct LOGIN_DATA
 {
-//TODO
-char data[DATA_LEN];
-
+char * login;
+char * password;
 };
 
+
 //funkcja opisującą zachowanie wątku - musi przyjmować argument typu (void *) i zwracać (void *)
-void *ThreadBehavior(void *t_data)
+void *ThreadBehavior(void *input)
 {
+    char login[LOGIN_LEN];
+    char password[PASSWD_LEN];
+        int connectionsocketdescriptor = *((int*)input);
+    do{
     pthread_detach(pthread_self());
-    struct thread_data_t *th_data = (struct thread_data_t*)t_data;
-    //dostęp do pól struktury: (*th_data).pole
-    for( int i = 0; i < DATA_LEN; i++){
-        (*th_data).data[i]=((*th_data).data[i]+1);
 
+    const char * msg = "need your login\n";
+    handle_error(write(connectionsocketdescriptor, msg, strlen(msg)));
 
+    printf("%d\n", connectionsocketdescriptor);
+    
+    handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
+
+    handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
+    
+    printf("%s\n",login);
+    printf("%s\n",password);
     }
-    //todo
-  
-    printf("%s", (*th_data).data);
-    pthread_exit(NULL);
+    while(!(strcmp(login, "admin\n")==0 && strcmp(password, "qwerty\n")==0)); //simple login for testing
+
+    handle_error(write(connectionsocketdescriptor, "yo\n", 4));
+    //you are logged now
+
+    return NULL;
 }
 
 //funkcja obsługująca połączenie z nowym klientem
-void handleConnection(int connection_socket_descriptor) {
+void gatherLoginData(int connection_socket_descriptor) {
     //wynik funkcji tworzącej wątek
     int create_result = 0;
 
@@ -59,28 +76,31 @@ void handleConnection(int connection_socket_descriptor) {
     //dane, które zostaną przekazane do wątku
     //TODO dynamiczne utworzenie instancji struktury thread_data_t o nazwie t_data (+ w odpowiednim miejscu zwolnienie pamięci)
     //TODO wypełnienie pól struktury
-    struct thread_data_t * t_data  = malloc( sizeof(struct thread_data_t));
-    strncpy((*t_data).data, "DUPA", 5);
 
+
+    //struct LOGIN_DATA * t_data  = malloc( sizeof(struct LOGIN_DATA));
+
+
+   
+
+    int fd = connection_socket_descriptor;
+
+
+    create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)&fd);
+    handle_error(create_result);
+    
 
     
 
-    create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)t_data);
-    if (create_result){
-       printf("Błąd przy próbie utworzenia wątku, kod błędu: %d\n", create_result);
-       exit(-1);
-    }
-    char buf[DATA_LEN];
-    read(connection_socket_descriptor, buf, DATA_LEN);
-
-    printf("%s", buf);
-    free(t_data);
-    exit(0);
+    return;
     //TODO (przy zadaniu 1) odbieranie -> wyświetlanie albo klawiatura -> wysyłanie
 }
 
 int main(int argc, char* argv[])
-{
+{   
+    //read data login from file
+
+
    int server_socket_descriptor;
    int connection_socket_descriptor;
    int bind_result;
@@ -125,7 +145,7 @@ int main(int argc, char* argv[])
            exit(1);
        }
 
-       handleConnection(connection_socket_descriptor);
+       gatherLoginData(connection_socket_descriptor);
    }
 
    close(server_socket_descriptor);
