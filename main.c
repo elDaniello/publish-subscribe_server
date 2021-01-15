@@ -20,6 +20,10 @@
 #define PASSWD_LEN 32
 #define MAX_USR_COUNT 128
 
+typedef int bool;
+#define true 1
+#define false 0
+
 
 void handle_error(int exitCode){
 if(exitCode<0){
@@ -35,6 +39,48 @@ char * login;
 char * password;
 };
 
+struct APP_DATA
+{
+    
+};
+
+pthread_mutex_t USERS_MUTEX = PTHREAD_MUTEX_INITIALIZER;
+
+struct USERS
+{
+    long registeredUsersCount;
+    char password [MAX_USR_COUNT][PASSWD_LEN];
+    char  login[MAX_USR_COUNT][LOGIN_LEN];
+};
+
+
+//check if user login credentials are valid
+bool Login(struct USERS * users, char* login, char* password){
+    for (int i = 0; i < users->registeredUsersCount; i++){
+        if( strcmp(login, users->login[i])==0 && strcmp(password, users->password[i])==0){
+            return true;
+        }
+    };
+    return false;   
+}
+
+//add new user to server
+bool RegisterUser(struct USERS * users, char * login, char * password){
+    pthread_mutex_lock(&USERS_MUTEX);
+    if(Login(users, login, password)==true){
+        pthread_mutex_unlock(&USERS_MUTEX);
+        return false; //user already exists
+    }
+    if(users->registeredUsersCount==MAX_USR_COUNT){
+        pthread_mutex_unlock(&USERS_MUTEX);
+        return false; //users limit reached 
+    }
+    strncpy(users->login[users->registeredUsersCount], login, LOGIN_LEN);
+    strncpy(users->password[users->registeredUsersCount], password, PASSWD_LEN);
+    users->registeredUsersCount++;
+    pthread_mutex_unlock(&USERS_MUTEX);
+    return true;
+}
 
 //funkcja opisującą zachowanie wątku - musi przyjmować argument typu (void *) i zwracać (void *)
 void *ThreadBehavior(void *input)
@@ -100,6 +146,8 @@ int main(int argc, char* argv[])
 {   
     //read data login from file
 
+    struct USERS users;
+    
 
    int server_socket_descriptor;
    int connection_socket_descriptor;
