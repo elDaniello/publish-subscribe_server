@@ -54,8 +54,8 @@ struct USERS
     char  login[MAX_USR_COUNT][LOGIN_LEN];
 };
 
-void write_to_client(int clientdesc, const char* message){
-
+void write_to_client(int clientsocket, const char* message){
+ handle_error(write(clientsocket, message, strlen(message)));
 }
 
 
@@ -112,59 +112,56 @@ void *ThreadBehavior(void *input)
     bool login_status = false;
    
     do{
+        const char * msg = "welcome\n L-login, R-register\n";
+        handle_error(write(connectionsocketdescriptor, msg, strlen(msg)));
 
-    const char * msg = "welcome\n L-login, R-register\n";
-    handle_error(write(connectionsocketdescriptor, msg, strlen(msg)));
+        printf("%d\n", connectionsocketdescriptor);
+        
+        char request[2]; //second char is \n, but we don't care about it
+        
 
-    printf("%d\n", connectionsocketdescriptor);
-    
-    char request[2]; //second char is \n, but we don't care about it
-    
+        handle_error(read(connectionsocketdescriptor, request, 2));
 
-    handle_error(read(connectionsocketdescriptor, request, 2));
+        switch (request[0])
+        {
+        case 'L':
+        
+            write_to_client(connectionsocketdescriptor, "I need your login\n");
+            handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
 
-    switch (request[0])
-    {
-    case 'L':
-    
-        handle_error(write(connectionsocketdescriptor, "I need your login\n", strlen("I need your login\n")));
-        handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
+            write_to_client(connectionsocketdescriptor, "Now I need your password\n");
+            handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
 
-        handle_error(write(connectionsocketdescriptor, "Now I need your password\n", strlen("Now I need your password\n")));
-        handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
+            login_status=Login(thread_data.users, login, password);
 
-        login_status=Login(thread_data.users, login, password);
+            if(login_status){
+                write_to_client(connectionsocketdescriptor, "Logged in\n");
+            }else{
+                write_to_client(connectionsocketdescriptor, "Try again\n");
+            }
+            break;
+        case 'R':
+            write_to_client(connectionsocketdescriptor, "type your login\n");
+            handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
+            write_to_client(connectionsocketdescriptor, "choose your password\n");
+            handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
 
-        if(login_status){
-            handle_error(write(connectionsocketdescriptor, "Logged in\n", strlen("Logged in\n")));
-        }else{
-            handle_error(write(connectionsocketdescriptor, "Try again\n", strlen("Try again\n")));
+            if(registerUser(thread_data.users, login, password)){
+                write_to_client(connectionsocketdescriptor, "registered succesfully\n");
+            }else{
+                write_to_client(connectionsocketdescriptor, "failed to register\n");
+            }
+            break;
+
+        default:
+            printf("what?\n");
+            break;
         }
-        break;
-    case 'R':
-         handle_error(write(connectionsocketdescriptor, "type your login\n", strlen("type your login\n")));
-         handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
-         handle_error(write(connectionsocketdescriptor, "choose your password\n", strlen("choose your password\n")));
-         handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
-         if(registerUser(thread_data.users, login, password)){
-            handle_error(write(connectionsocketdescriptor, "registered succesfully\n", strlen("registered succesfully\n")));
-         }else{
-            handle_error(write(connectionsocketdescriptor, "failed to register\n", strlen("failed to register\n")));
-         }
-        break;
-    default:
-         printf("what?\n");
-        break;
-    }
 
-    }
-    while(login_status==false);
-
+    }while(login_status==false);
+    //code when user is logged in
     
-    //while(!(strcmp(login, "admin\n")==0 && strcmp(password, "qwerty\n")==0)); //simple login for testing
-
-    //handle_error(write(connectionsocketdescriptor, "logged in\n", 4));
-    //you are logged now
+    
 
     return NULL;
 }
