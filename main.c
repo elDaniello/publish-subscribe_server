@@ -32,16 +32,17 @@ if(exitCode<0){
 }
 };
 
-//struktura zawierająca dane, które zostaną przekazane do wątku
+
 struct LOGIN_DATA
 {
 char * login;
 char * password;
 };
 
-struct APP_DATA
+struct THREAD_DATA
 {
-    
+    struct USERS * users;
+    int connectionsocketdescriptor;
 };
 
 pthread_mutex_t USERS_MUTEX = PTHREAD_MUTEX_INITIALIZER;
@@ -52,6 +53,10 @@ struct USERS
     char password [MAX_USR_COUNT][PASSWD_LEN];
     char  login[MAX_USR_COUNT][LOGIN_LEN];
 };
+
+void write_to_client(int clientdesc, const char* message){
+
+}
 
 
 //check if user login credentials are valid
@@ -65,14 +70,19 @@ bool Login(struct USERS * users, char* login, char* password){
 }
 
 //add new user to server
-bool RegisterUser(struct USERS * users, char * login, char * password){
+bool registerUser(struct USERS * users, char * login, char * password){
     pthread_mutex_lock(&USERS_MUTEX);
-    if(Login(users, login, password)==true){
-        pthread_mutex_unlock(&USERS_MUTEX);
-        return false; //user already exists
+    for(int i = 0; i < users->registeredUsersCount; i++)
+    {
+        if(strcmp(users->login[i], login)==0){
+            pthread_mutex_unlock(&USERS_MUTEX);
+            return false; //user already exists
+        }
     }
+
     if(users->registeredUsersCount==MAX_USR_COUNT){
         pthread_mutex_unlock(&USERS_MUTEX);
+        printf("max user count reached");
         return false; //users limit reached 
     }
     strncpy(users->login[users->registeredUsersCount], login, LOGIN_LEN);
@@ -82,37 +92,85 @@ bool RegisterUser(struct USERS * users, char * login, char * password){
     return true;
 }
 
+//load user data to the memory
+void loadUserData(struct USERS * users){
+    users->registeredUsersCount=0;
+    registerUser(users, "admin\n", "qwerty\n"); //for testing
+    //todo - add read from file
+};
+
 //funkcja opisującą zachowanie wątku - musi przyjmować argument typu (void *) i zwracać (void *)
 void *ThreadBehavior(void *input)
 {
+    pthread_detach(pthread_self());
     char login[LOGIN_LEN];
     char password[PASSWD_LEN];
-        int connectionsocketdescriptor = *((int*)input);
+    struct THREAD_DATA thread_data = *((struct THREAD_DATA*)input);
+    
+    int connectionsocketdescriptor = thread_data.connectionsocketdescriptor;
+    
+    bool login_status = false;
+   
     do{
-    pthread_detach(pthread_self());
 
-    const char * msg = "need your login\n";
+    const char * msg = "welcome\n L-login, R-register\n";
     handle_error(write(connectionsocketdescriptor, msg, strlen(msg)));
 
     printf("%d\n", connectionsocketdescriptor);
     
-    handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
-
-    handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
+    char request[2]; //second char is \n, but we don't care about it
     
-    printf("%s\n",login);
-    printf("%s\n",password);
-    }
-    while(!(strcmp(login, "admin\n")==0 && strcmp(password, "qwerty\n")==0)); //simple login for testing
 
-    handle_error(write(connectionsocketdescriptor, "yo\n", 4));
+    handle_error(read(connectionsocketdescriptor, request, 2));
+
+    switch (request[0])
+    {
+    case 'L':
+    
+        handle_error(write(connectionsocketdescriptor, "I need your login\n", strlen("I need your login\n")));
+        handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
+
+        handle_error(write(connectionsocketdescriptor, "Now I need your password\n", strlen("Now I need your password\n")));
+        handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
+
+        login_status=Login(thread_data.users, login, password);
+
+        if(login_status){
+            handle_error(write(connectionsocketdescriptor, "Logged in\n", strlen("Logged in\n")));
+        }else{
+            handle_error(write(connectionsocketdescriptor, "Try again\n", strlen("Try again\n")));
+        }
+        break;
+    case 'R':
+         handle_error(write(connectionsocketdescriptor, "type your login\n", strlen("type your login\n")));
+         handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
+         handle_error(write(connectionsocketdescriptor, "choose your password\n", strlen("choose your password\n")));
+         handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
+         if(registerUser(thread_data.users, login, password)){
+            handle_error(write(connectionsocketdescriptor, "registered succesfully\n", strlen("registered succesfully\n")));
+         }else{
+            handle_error(write(connectionsocketdescriptor, "failed to register\n", strlen("failed to register\n")));
+         }
+        break;
+    default:
+         printf("what?\n");
+        break;
+    }
+
+    }
+    while(login_status==false);
+
+    
+    //while(!(strcmp(login, "admin\n")==0 && strcmp(password, "qwerty\n")==0)); //simple login for testing
+
+    //handle_error(write(connectionsocketdescriptor, "logged in\n", 4));
     //you are logged now
 
     return NULL;
 }
 
 //funkcja obsługująca połączenie z nowym klientem
-void gatherLoginData(int connection_socket_descriptor) {
+void gatherLoginData(int connection_socket_descriptor, struct USERS users) {
     //wynik funkcji tworzącej wątek
     int create_result = 0;
 
@@ -129,10 +187,11 @@ void gatherLoginData(int connection_socket_descriptor) {
 
    
 
-    int fd = connection_socket_descriptor;
-
-
-    create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)&fd);
+    
+    struct THREAD_DATA thread_data;
+    thread_data.connectionsocketdescriptor=connection_socket_descriptor;
+    thread_data.users=&users;
+    create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)&thread_data);
     handle_error(create_result);
     
 
@@ -147,6 +206,7 @@ int main(int argc, char* argv[])
     //read data login from file
 
     struct USERS users;
+    loadUserData(&users);
     
 
    int server_socket_descriptor;
@@ -193,7 +253,7 @@ int main(int argc, char* argv[])
            exit(1);
        }
 
-       gatherLoginData(connection_socket_descriptor);
+       gatherLoginData(connection_socket_descriptor, users);
    }
 
    close(server_socket_descriptor);
