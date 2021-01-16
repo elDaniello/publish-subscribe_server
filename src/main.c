@@ -130,6 +130,8 @@ int main(int argc, char* argv[])
 {   
     //read data login from file
 
+    struct TAGS tags;
+
     struct USERS users;
     loadUserData(&users);
     

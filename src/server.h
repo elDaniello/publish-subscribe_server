@@ -5,6 +5,7 @@
 #define MAX_USR_COUNT 128
 #define MAX_TAGS_COUNT 64
 #define MAX_TAG_NAME_LEN 32
+#define MAX_MSG_LEN 280 //is that a twitter reference?
 
 #include <pthread.h>
 #include <stdbool.h>
@@ -42,18 +43,28 @@ struct TAG
     char admin[LOGIN_LEN];
     int subsCount;
     char **subs;
+    long messagesCount;
+    struct MESSAGE * message;
+    pthread_mutex_t messageMutex;
+    pthread_mutex_t subsMutex;
 };
 
 struct TAGS
 {
     long tagsCount;
     struct TAG tag[MAX_TAGS_COUNT];
-    
+    pthread_mutex_t mutex;
 };
 
+struct MESSAGE
+{
+char text[MAX_MSG_LEN];
+};
 
+//display human-readable error description to stderr if function fails
 void handle_error(int exitCode);
 
+//writes plain text to client at @clientsocket
 void write_to_client(int clientsocket, const char* message);
 
 //check if user login credentials are valid
@@ -64,5 +75,7 @@ bool registerUser(struct USERS * users, char * login, char * password);
 
 //load user data to the memory
 void loadUserData(struct USERS * users);
+
+void createNewTag(struct TAGS tags, char * tagname, char * admin);
 
 #endif

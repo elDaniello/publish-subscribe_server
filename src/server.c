@@ -66,10 +66,11 @@ bool registerUser(struct USERS * users, char * login, char * password){
 //load user data to the memory
 void loadUserData(struct USERS * users){
     
-    pthread_mutex_init(&(users->mutex), NULL);
+    pthread_mutex_init(&(users->mutex), NULL); //initialize mutex
     users->registeredUsersCount=0;
 
     registerUser(users, "admin\n", "qwerty\n"); //for testing
     //todo - add read from file
 };
+
 
