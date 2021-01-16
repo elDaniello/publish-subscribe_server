@@ -84,42 +84,63 @@ void *ThreadBehavior(void *input)
 
     }while(login_status==false);
     //code when user is logged in
+    // TODO - send list of client's subscribed topics
+    char request[2]; //second char is \n, but we don't care about it
+    write_to_client(connectionsocketdescriptor, "C - create new tag, A - get all tags names\n");
+    while(true){
+    handle_error(read(connectionsocketdescriptor, request, 2));
+  
+    switch (request[0])
+    {
+    case 'C': 
+        write_to_client(connectionsocketdescriptor, "choose name:\n");
+        char tagname[TAG_NAME_LEN];
+        handle_error(read(connectionsocketdescriptor, tagname, TAG_NAME_LEN));
+        if(createNewTag(thread_data.tags, tagname, login)){
+            write_to_client(connectionsocketdescriptor, "tag created\n");
+        }else{
+             write_to_client(connectionsocketdescriptor, "failure while creating tag\n");
+        };
+        break;
+    case 'A': ;
+        char tagsCount[4];
+        sprintf(tagsCount, "%ld", thread_data.tags->tagsCount);
+        //writes number of tags to read 
+        write_to_client(connectionsocketdescriptor, tagsCount);
+        write_to_client(connectionsocketdescriptor, "\n");
 
-    //send list of client's subscribed topics
+        for(int i = 0; i < thread_data.tags->tagsCount; i++){
+            write_to_client(connectionsocketdescriptor, thread_data.tags->tag[i].name);
+            //write_to_client(connectionsocketdescriptor, "\n");
+        }
+        break;
+    default:
+        printf("what do you mean?\n"); 
+        write_to_client(connectionsocketdescriptor, "what?\n");
+        break;
+    }
+    }
     
 
-    write_to_client(connectionsocketdescriptor, "");
-    
+    write_to_client(connectionsocketdescriptor, "connection closed\n");
+    close(connectionsocketdescriptor);
 
     return NULL;
 }
 
 //funkcja obsługująca połączenie z nowym klientem
-void handleUser(int connection_socket_descriptor, struct USERS users) {
-    //wynik funkcji tworzącej wątek
+void handleUser(int connection_socket_descriptor, struct USERS users, struct TAGS tags) {
     int create_result = 0;
 
-    //uchwyt na wątek
     pthread_t thread1;
-
-    //dane, które zostaną przekazane do wątku
-    //TODO dynamiczne utworzenie instancji struktury thread_data_t o nazwie t_data (+ w odpowiednim miejscu zwolnienie pamięci)
-    //TODO wypełnienie pól struktury
-
-
-    //struct LOGIN_DATA * t_data  = malloc( sizeof(struct LOGIN_DATA));
-
-
-   
 
     
     struct THREAD_DATA thread_data;
     thread_data.connectionsocketdescriptor=connection_socket_descriptor;
     thread_data.users=&users;
+    thread_data.tags=&tags;
     create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)&thread_data);
     handle_error(create_result);
-    
-
     
 
     return;
@@ -131,10 +152,13 @@ int main(int argc, char* argv[])
     //read data login from file
 
     struct TAGS tags;
+    handle_error(pthread_mutex_init(&(tags.mutex), NULL));
+    tags.tagsCount=0;
 
     struct USERS users;
     loadUserData(&users);
     
+
 
    int server_socket_descriptor;
    int connection_socket_descriptor;
@@ -180,7 +204,7 @@ int main(int argc, char* argv[])
            exit(1);
        }
 
-       handleUser(connection_socket_descriptor, users);
+       handleUser(connection_socket_descriptor, users, tags);
    }
 
    close(server_socket_descriptor);

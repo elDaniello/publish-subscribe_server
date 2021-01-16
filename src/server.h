@@ -4,8 +4,9 @@
 #define PASSWD_LEN 32
 #define MAX_USR_COUNT 128
 #define MAX_TAGS_COUNT 64
-#define MAX_TAG_NAME_LEN 32
+#define TAG_NAME_LEN 16
 #define MAX_MSG_LEN 280 //is that a twitter reference?
+
 
 #include <pthread.h>
 #include <stdbool.h>
@@ -26,6 +27,7 @@ struct THREAD_DATA
 {
     struct USERS * users;
     int connectionsocketdescriptor;
+    struct TAGS * tags;
 };
 
 
@@ -40,13 +42,15 @@ struct USERS
 
 struct TAG
 {
+    char name[TAG_NAME_LEN];
     char admin[LOGIN_LEN];
     int subsCount;
-    char **subs;
+    char *subs[LOGIN_LEN];
+    pthread_mutex_t subsMutex;
     long messagesCount;
     struct MESSAGE * message;
     pthread_mutex_t messageMutex;
-    pthread_mutex_t subsMutex;
+    
 };
 
 struct TAGS
@@ -76,6 +80,18 @@ bool registerUser(struct USERS * users, char * login, char * password);
 //load user data to the memory
 void loadUserData(struct USERS * users);
 
-void createNewTag(struct TAGS tags, char * tagname, char * admin);
+//creates new tag if it's name is uniqe and server didn't reached MAX_TAGS_COUNT
+bool createNewTag(struct TAGS * tags, char * tagname, char * admin);
+
+
+bool newMessage(struct TAG * tag, char * text);
+
+//returns all tags names if user wants to subscribe one
+char ** getAllTagsNames(struct TAGS * tags);
+
+char ** getMySubscriptionsTags(char * name, struct TAGS * tags);
+
+struct MESSAGE loadTag(struct TAG * tag);
+
 
 #endif

@@ -73,4 +73,36 @@ void loadUserData(struct USERS * users){
     //todo - add read from file
 };
 
+bool createNewTag(struct TAGS * tags, char * tagname, char * admin){
+    pthread_mutex_lock(&(tags->mutex));
+    //first, check if tag's name is unique
+    for (int i = 0; i < tags->tagsCount; i ++){
+        if(strcmp(tags->tag[i].name, tagname)==0){ 
+            pthread_mutex_unlock(&(tags->mutex));
+            return false;
+        }    
+    }
+    
+    strncpy(tags->tag[tags->tagsCount].name, tagname, TAG_NAME_LEN);
+    strncpy(tags->tag[tags->tagsCount].admin, admin, LOGIN_LEN);
+    tags->tag[tags->tagsCount].subsCount=0;
+    
+    pthread_mutex_init(&(tags->tag[tags->tagsCount].messageMutex), NULL);
+    pthread_mutex_init(&(tags->tag[tags->tagsCount].subsMutex), NULL);
+    tags->tagsCount++;
+    pthread_mutex_unlock(&(tags->mutex));
+    
+    printf("Tag %s created.\n", tagname);
+    return true;
 
+}
+
+
+char ** getAllTagsNames(struct TAGS * tags){
+
+char  tagnames[TAG_NAME_LEN][tags->tagsCount];// = malloc(sizeof(char)*tags->tagsCount*TAG_NAME_LEN);
+for (int i = 0; i < tags->tagsCount; i++){
+    strncpy(tagnames[i], tags->tag->name, TAG_NAME_LEN);
+}
+
+}
