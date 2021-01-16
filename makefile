@@ -4,5 +4,6 @@ run: compile
 compile: clean
 	gcc -pthread main.c -o main.out -g
 
-clean: 
+clean:
+	echo "XD" > get.out # when compile fails and there's nothig to remove
 	rm *.out
