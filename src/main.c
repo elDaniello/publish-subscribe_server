@@ -157,7 +157,11 @@ int main(int argc, char* argv[])
 
     struct USERS users;
     loadUserData(&users);
-    
+    //test
+
+    createNewTag(&tags, "tag testowy", "admin");
+    newMessage(getTagStructByName(&tags, "tag testowy"), "admin", "hejo");
+
 
 
    int server_socket_descriptor;

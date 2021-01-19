@@ -62,6 +62,7 @@ struct TAGS
 
 struct MESSAGE
 {
+char author[LOGIN_LEN];
 char text[MAX_MSG_LEN];
 };
 
@@ -80,18 +81,36 @@ bool registerUser(struct USERS * users, char * login, char * password);
 //load user data to the memory
 void loadUserData(struct USERS * users);
 
+//add user to tag subscribe list
+bool subscribe(struct TAGS * tags, char * tagName, char * user);
+
+
+//return TAG struct with given name
+struct TAG * getTagStructByName(struct TAGS * tags, char * name);
+
 //creates new tag if it's name is uniqe and server didn't reached MAX_TAGS_COUNT
 bool createNewTag(struct TAGS * tags, char * tagname, char * admin);
 
+//creates new message on given tag
+bool newMessage(struct TAG * tag, char * name, char * text);
 
-bool newMessage(struct TAG * tag, char * text);
+//checks if user has permission to post on this tag
+bool isAllowedToPost(struct TAG tag, char * name);
 
-//returns all tags names if user wants to subscribe one
+//return all tags names if user wants to subscribe one
 char ** getAllTagsNames(struct TAGS * tags);
 
-char ** getMySubscriptionsTags(char * name, struct TAGS * tags);
+//gets all tags names subscribed by given
+char ** getMySubscriptionsTags(char * user, struct TAGS * tags);
+
 
 struct MESSAGE loadTag(struct TAG * tag);
 
+//check if user is subscribing tag
+bool isSubscriber(struct TAG  tag, char * name);
+
+
+//check how many tags users is subscribing
+int getUserSubscriptionsCount(struct TAGS tags, char * name);
 
 #endif
