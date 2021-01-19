@@ -1,7 +1,7 @@
 /*server responses*/
 #define CONNECTION_ESTABLILISHED "Connected\n"
-#define LOGIN_REQUEST "Enter your login\n"
-#define PASSWORD_REQUEST "Enter your password\n"
+#define GET_LOGIN "Enter your login\n"
+#define GET_PASSWORD "Enter your password\n"
 #define LOGIN_SUCCESFULL "Logged in\n"
 #define BAD_LOGIN_CREDENTIALS "Login failed, try again\n"
 #define REGISTATION_SUCCES "Account created\n"
