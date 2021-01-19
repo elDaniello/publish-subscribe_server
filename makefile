@@ -9,5 +9,5 @@ clean:
 	rm *.out
 
 test: 
-	gcc -o ./tests/test.out ./tests/server_check.c
+	gcc -o ./tests/test.out ./tests/server_check.c ./src/server.c 
 	./tests/test.out
