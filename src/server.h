@@ -81,6 +81,8 @@ bool registerUser(struct USERS * users, char * login, char * password);
 //load user data to the memory
 void loadUserData(struct USERS * users);
 
+void initTags(struct TAGS * tags);
+
 //add user to tag subscribe list
 bool subscribe(struct TAGS * tags, char * tagName, char * user);
 
@@ -103,6 +105,8 @@ char ** getAllTagsNames(struct TAGS * tags);
 //gets all tags names subscribed by given
 char ** getMySubscriptionsTags(char * user, struct TAGS * tags);
 
+//check if user is registered on server
+bool isRegistered(struct USERS users, char * user);
 
 struct MESSAGE loadTag(struct TAG * tag);
 
@@ -112,5 +116,6 @@ bool isSubscriber(struct TAG  tag, char * name);
 
 //check how many tags users is subscribing
 int getUserSubscriptionsCount(struct TAGS tags, char * name);
+
 
 #endif

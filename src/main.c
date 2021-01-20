@@ -15,10 +15,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
+
 #include "server.h"
-
-
-
+#include "API.h"
 
 
 
@@ -37,7 +36,7 @@ void *ThreadBehavior(void *input)
    
     do{
 
-        write_to_client(connectionsocketdescriptor, "welcome\n L-login, R-register\n");
+        write_to_client(connectionsocketdescriptor, CONNECTION_ESTABLILISHED);
 
         printf("%d\n", connectionsocketdescriptor);
         
@@ -50,30 +49,30 @@ void *ThreadBehavior(void *input)
         {
         case 'L':
         
-            write_to_client(connectionsocketdescriptor, "I need your login\n");
+            write_to_client(connectionsocketdescriptor, GET_LOGIN);
             handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
 
-            write_to_client(connectionsocketdescriptor, "Now I need your password\n");
+            write_to_client(connectionsocketdescriptor, GET_PASSWORD);
             handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
 
             login_status=Login(thread_data.users, login, password);
 
             if(login_status){
-                write_to_client(connectionsocketdescriptor, "Logged in\n");
+                write_to_client(connectionsocketdescriptor, LOGIN_SUCCESFULL);
             }else{
-                write_to_client(connectionsocketdescriptor, "Try again\n");
+                write_to_client(connectionsocketdescriptor, BAD_LOGIN_CREDENTIALS);
             }
             break;
         case 'R':
-            write_to_client(connectionsocketdescriptor, "type your login\n");
+            write_to_client(connectionsocketdescriptor, GET_LOGIN);
             handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
-            write_to_client(connectionsocketdescriptor, "choose your password\n");
+            write_to_client(connectionsocketdescriptor, GET_PASSWORD);
             handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
 
             if(registerUser(thread_data.users, login, password)){
-                write_to_client(connectionsocketdescriptor, "registered succesfully\n");
+                write_to_client(connectionsocketdescriptor, REGISTATION_SUCCES);
             }else{
-                write_to_client(connectionsocketdescriptor, "failed to register\n");
+                write_to_client(connectionsocketdescriptor, REGISTATION_FAIL);
             }
             break;
 
@@ -83,16 +82,14 @@ void *ThreadBehavior(void *input)
         }
 
     }while(login_status==false);
-    //code when user is logged in
     // TODO - send list of client's subscribed topics
-    char request[2]; //second char is \n, but we don't care about it
-    write_to_client(connectionsocketdescriptor, "C - create new tag, A - get all tags names\n");
-    while(true){
-    handle_error(read(connectionsocketdescriptor, request, 2));
+    char request[REQUEST_MAX_LEN]; //second char is \n, but we don't care about it
+    
+    while(true){ //when logged in
+    handle_error(read(connectionsocketdescriptor, request, REQUEST_MAX_LEN));
   
-    switch (request[0])
-    {
-    case 'C': 
+    if(strcmp(request, CREATE_TAG)==0){
+        
         write_to_client(connectionsocketdescriptor, "choose name:\n");
         char tagname[TAG_NAME_LEN];
         handle_error(read(connectionsocketdescriptor, tagname, TAG_NAME_LEN));
@@ -101,8 +98,8 @@ void *ThreadBehavior(void *input)
         }else{
              write_to_client(connectionsocketdescriptor, "failure while creating tag\n");
         };
-        break;
-    case 'A': ;
+
+    }else if(strcmp(request, GET_TAGS_NAMES)==0){
         char tagsCount[4];
         sprintf(tagsCount, "%ld", thread_data.tags->tagsCount);
         //writes number of tags to read 
@@ -112,17 +109,16 @@ void *ThreadBehavior(void *input)
         for(int i = 0; i < thread_data.tags->tagsCount; i++){
             write_to_client(connectionsocketdescriptor, thread_data.tags->tag[i].name);
             //write_to_client(connectionsocketdescriptor, "\n");
-        }
-        break;
-    default:
-        printf("what do you mean?\n"); 
-        write_to_client(connectionsocketdescriptor, "what?\n");
+        };
+    }else{
+        //printf("what do you mean?\n"); 
+        write_to_client(connectionsocketdescriptor, UNKNOWN_REQUEST);
         break;
     }
-    }
+    };
     
 
-    write_to_client(connectionsocketdescriptor, "connection closed\n");
+    write_to_client(connectionsocketdescriptor, CONNECTION_CLOSED);
     close(connectionsocketdescriptor);
 
     return NULL;
@@ -152,16 +148,16 @@ int main(int argc, char* argv[])
     //read data login from file
 
     struct TAGS tags;
-    handle_error(pthread_mutex_init(&(tags.mutex), NULL));
-    tags.tagsCount=0;
+    initTags(&tags);
+
 
     struct USERS users;
     loadUserData(&users);
     //test
 
     createNewTag(&tags, "tag testowy", "admin");
-    newMessage(getTagStructByName(&tags, "tag testowy"), "admin", "hejo");
-
+    //newMessage(getTagStructByName(&tags, "tag testowy"), "admin", "hejo");
+    //newMessage(getTagStructByName(&tags, "tag testowy"), "admin", "hejo");
 
 
    int server_socket_descriptor;

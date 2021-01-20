@@ -13,6 +13,7 @@
 #define CONNECTION_CLOSED "Disconnected\n"
 
 /*client requests*/
+#define REQUEST_MAX_LEN 10 /*size of the longest clien request*/
 #define REGISTER_REQUEST "Register\n"
 #define LOGIN_REQUEST "Login\n"
 #define CREATE_TAG "New tag\n"

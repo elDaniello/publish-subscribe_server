@@ -193,5 +193,20 @@ bool newMessage(struct TAG * tag,char * name, char * text){
 
 
 bool isAllowedToPost(struct TAG tag, char * name){
-    return strcmp(tag.name, name)==0; //only admin (creator) of tag is allowed to publish, may change it later
+    return strcmp(tag.admin, name)==0; //only admin (creator) of tag is allowed to publish, may change it later
+}
+
+void initTags(struct TAGS * tags){
+    pthread_mutex_init(&(tags->mutex), NULL);
+    tags->tagsCount = 0;
+}
+
+bool isRegistered(struct USERS users, char * user){
+    for (int i = 0; i < users.registeredUsersCount; i++){
+        if(strcmp(users.login[i], user)==0){
+            return true;
+        }
+    
+    }
+    return false;
 }
