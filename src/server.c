@@ -16,7 +16,7 @@
 #include <stdbool.h>
 
 #include "server.h"
-
+#include "err.h"
 void handle_error(int exitCode){
 if(exitCode<0){
     fprintf(stderr, "Error: %s\n", strerror( errno ));
@@ -149,12 +149,16 @@ struct TAG * getTagStructByName(struct TAGS * tags, char * name){
 bool subscribe(struct TAGS * tags, char * tagName, char * user){
     
     struct TAG  * targetTag = getTagStructByName(tags, tagName);
-    
+    if(targetTag==NULL){
+        printf("Count't subscribe, tag %s not found\n",tagName);
+        return false;
+    }
     if(isSubscriber(*targetTag, user)){
         return false; //can't subscibe tag that is already subscibed by user
     }
 
     pthread_mutex_lock(&targetTag->subsMutex);
+        targetTag->subs[targetTag->subsCount] = malloc(sizeof(char) * LOGIN_LEN);
         strncpy(targetTag->subs[targetTag->subsCount], user, LOGIN_LEN);
         targetTag->subsCount++;
     pthread_mutex_unlock(&targetTag->subsMutex);    

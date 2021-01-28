@@ -40,15 +40,13 @@ void *ThreadBehavior(void *input)
 
         printf("%d\n", connectionsocketdescriptor);
         
-        char request[2]; //second char is \n, but we don't care about it
+        char request[REQUEST_MAX_LEN]; 
         
 
-        handle_error(read(connectionsocketdescriptor, request, 2));
+        handle_error(read(connectionsocketdescriptor, request, REQUEST_MAX_LEN));
 
-        switch (request[0])
-        {
-        case 'L':
-        
+        if(strcmp(request, LOGIN_REQUEST)==0){
+
             write_to_client(connectionsocketdescriptor, GET_LOGIN);
             handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
 
@@ -61,9 +59,13 @@ void *ThreadBehavior(void *input)
                 write_to_client(connectionsocketdescriptor, LOGIN_SUCCESFULL);
             }else{
                 write_to_client(connectionsocketdescriptor, BAD_LOGIN_CREDENTIALS);
+                memset(login, 0, LOGIN_LEN);
+                memset(password, 0, PASSWD_LEN);
+
             }
-            break;
-        case 'R':
+        }else
+        if(strcmp(request, REGISTER_REQUEST)==0){
+
             write_to_client(connectionsocketdescriptor, GET_LOGIN);
             handle_error(read(connectionsocketdescriptor, login, LOGIN_LEN));
             write_to_client(connectionsocketdescriptor, GET_PASSWORD);
@@ -73,31 +75,46 @@ void *ThreadBehavior(void *input)
                 write_to_client(connectionsocketdescriptor, REGISTATION_SUCCES);
             }else{
                 write_to_client(connectionsocketdescriptor, REGISTATION_FAIL);
+                memset(login, 0, LOGIN_LEN);
+                memset(password, 0, PASSWD_LEN);
             }
-            break;
-
-        default:
-            printf("what?\n");
-            break;
         }
-
+        else{
+            write_to_client(connectionsocketdescriptor, UNKNOWN_REQUEST);
+            memset(request, 0, REQUEST_MAX_LEN);
+        }  
     }while(login_status==false);
     // TODO - send list of client's subscribed topics
-    char request[REQUEST_MAX_LEN]; //second char is \n, but we don't care about it
+     //second char is \n, but we don't care about it
     
     while(true){ //when logged in
+    char request[REQUEST_MAX_LEN]={0};
     handle_error(read(connectionsocketdescriptor, request, REQUEST_MAX_LEN));
   
     if(strcmp(request, CREATE_TAG)==0){
         
         write_to_client(connectionsocketdescriptor, "choose name:\n");
-        char tagname[TAG_NAME_LEN];
+        char tagname[TAG_NAME_LEN]={0};
         handle_error(read(connectionsocketdescriptor, tagname, TAG_NAME_LEN));
         if(createNewTag(thread_data.tags, tagname, login)){
             write_to_client(connectionsocketdescriptor, "tag created\n");
         }else{
              write_to_client(connectionsocketdescriptor, "failure while creating tag\n");
+             memset(tagname, 0, TAG_NAME_LEN);
         };
+    
+    }else if(strcmp(request, GET_FEED)==0){
+        int tagsCount = getUserSubscriptionsCount(*thread_data.tags, login);
+        char tagsCountText[4];
+        sprintf(tagsCountText, "%d", tagsCount);
+        write_to_client(connectionsocketdescriptor, tagsCountText);
+        write_to_client(connectionsocketdescriptor, "\n");
+
+     for ( int i = 0; i<thread_data.tags->tagsCount; i++){
+        if(isSubscriber(thread_data.tags->tag[i], login)){
+            write_to_client(connectionsocketdescriptor, thread_data.tags->tag[i].name);
+        }
+    }
 
     }else if(strcmp(request, GET_TAGS_NAMES)==0){
         char tagsCount[4];
@@ -110,14 +127,34 @@ void *ThreadBehavior(void *input)
             write_to_client(connectionsocketdescriptor, thread_data.tags->tag[i].name);
             //write_to_client(connectionsocketdescriptor, "\n");
         };
-    }else{
+    }else if(strcmp(request, LOAD_TAG)==0){
+        char tagname[TAG_NAME_LEN]={0};
+        handle_error(read(connectionsocketdescriptor,tagname, TAG_NAME_LEN));
+        //char msgCount[5];
+        //sprintf(msgCount, "%ld", thread_data.tags->tag[])
+
+    }else if(strcmp(request, LOGOUT)==0){
+        write_to_client(connectionsocketdescriptor, LOGGED_OUT);
+        break;
+
+    }else if(strcmp(request, SUBSCRIBE_TAG)==0){
+        write_to_client(connectionsocketdescriptor, TAG_NAME_REQUEST);
+        char tagname [TAG_NAME_LEN] = {0};
+        handle_error(read(connectionsocketdescriptor, tagname, TAG_NAME_LEN));
+        bool status = subscribe(thread_data.tags, tagname, login);
+        if(status){
+            write_to_client(connectionsocketdescriptor, SUBSCRIBTION_SUCCES);
+        }else{
+            write_to_client(connectionsocketdescriptor,SUBSCRIBTION_FAIL);
+        }
+        
+    }
+    else{
         //printf("what do you mean?\n"); 
         write_to_client(connectionsocketdescriptor, UNKNOWN_REQUEST);
-        break;
+        
     }
     };
-    
-
     write_to_client(connectionsocketdescriptor, CONNECTION_CLOSED);
     close(connectionsocketdescriptor);
 
@@ -155,7 +192,7 @@ int main(int argc, char* argv[])
     loadUserData(&users);
     //test
 
-    createNewTag(&tags, "tag testowy", "admin");
+    createNewTag(&tags, "tag testowy\n", "admin\n");
     //newMessage(getTagStructByName(&tags, "tag testowy"), "admin", "hejo");
     //newMessage(getTagStructByName(&tags, "tag testowy"), "admin", "hejo");
 
