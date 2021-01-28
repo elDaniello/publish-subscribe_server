@@ -118,4 +118,7 @@ bool isSubscriber(struct TAG  tag, char * name);
 int getUserSubscriptionsCount(struct TAGS tags, char * name);
 
 
+//try to unsubscribe user from tag if possible, if not return false
+bool unsubscribe(struct TAGS * tags, char * tagName, char * user);
+
 #endif

@@ -214,3 +214,32 @@ bool isRegistered(struct USERS users, char * user){
     }
     return false;
 }
+
+bool unsubscribe(struct TAGS * tags, char * tagName, char * user){
+    
+    struct TAG  * targetTag = getTagStructByName(tags, tagName);
+    if(targetTag==NULL){
+        printf("Count't unsubscribe, tag %s not found\n",tagName);
+        return false;
+    }
+    if(!isSubscriber(*targetTag, user)){
+        printf("Can't unsubscribe if user %s does not subscribe tag %s.\n", user, tagName);
+        return false; //can't unsubscribe tag that is not subscribed
+    }
+
+    pthread_mutex_lock(&targetTag->subsMutex);
+        for( int i=0; i<targetTag->subsCount; i++){
+            if(strcmp(user, targetTag->subs[i])==0){ 
+                
+                targetTag->subsCount--;
+                if(targetTag->subsCount>0){ //we want to prevent array *subs* for having 'holes' after deletion
+                    strncpy(targetTag->subs[i], targetTag->subs[targetTag->subsCount], LOGIN_LEN);
+                    free(targetTag->subs[targetTag->subsCount]); //delete last element from array after moving it to the place of deleted sub
+                }else{ //if deleted sub is last one
+                    free(targetTag->subs[0]);
+                }
+            }
+        }      
+    pthread_mutex_unlock(&targetTag->subsMutex);    
+    return true;
+}

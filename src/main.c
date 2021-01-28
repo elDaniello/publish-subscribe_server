@@ -148,6 +148,16 @@ void *ThreadBehavior(void *input)
             write_to_client(connectionsocketdescriptor,SUBSCRIBTION_FAIL);
         }
         
+    }else if(strcmp(request, UNSUBSCRIBE)){
+        write_to_client(connectionsocketdescriptor, TAG_NAME_REQUEST);
+        char tagname [TAG_NAME_LEN] = {0};
+        handle_error(read(connectionsocketdescriptor, tagname, TAG_NAME_LEN));
+        bool status = unsubscribe(thread_data.tags, tagname, login);
+        if(status){
+            write_to_client(connectionsocketdescriptor, UNSUBSCRIBTION_SUCCES);
+        }else{
+            write_to_client(connectionsocketdescriptor,UNSUBSCRIBTION_FAIL);
+        }
     }
     else{
         //printf("what do you mean?\n"); 

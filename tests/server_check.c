@@ -44,7 +44,14 @@ newMessage(getTagStructByName(&tags, "tag testowy"), "hackerman", "proba nieauto
 
 assert_true(tags.tagsCount==2 && tags.tag[0].messagesCount==2 && tags.tag[1].messagesCount==0, "tag adding test");
 
-assert_true(subscribe(&tags, "tag testowy", "admin"), "subscribe test");
+assert_true(subscribe(&tags, "tag testowy", "admin") && tags.tag[0].subsCount==1, "subscribe test 1");
+assert_true(!subscribe(&tags, "tag testowy", "admin") && tags.tag[0].subsCount==1, "subscribe test 2 - user can't subscribe already subscribed tag");
+assert_true(subscribe(&tags, "tag testowy", "hackerman") && tags.tag[0].subsCount==2, "subscribe test 3");
+
+
+assert_true(unsubscribe(&tags, "tag testowy", "hackerman") && tags.tag[0].subsCount==1, "unsubscribe test");
+assert_true(!unsubscribe(&tags, "tag testowy", "hackerman") && tags.tag[0].subsCount==1, "unsubscribe test 2 - can't unsubscribe tag that is not subscribed by user");
+assert_true(unsubscribe(&tags, "tag testowy", "admin") && tags.tag[0].subsCount==0, "unsubscribe test 1");
 }
 
 
