@@ -44,6 +44,7 @@ newMessage(getTagStructByName(&tags, "tag testowy"), "hackerman", "proba nieauto
 
 assert_true(tags.tagsCount==2 && tags.tag[0].messagesCount==2 && tags.tag[1].messagesCount==0, "tag adding test");
 
+assert_true(subscribe(&tags, "tag testowy", "admin"), "subscribe test");
 }
 
 
