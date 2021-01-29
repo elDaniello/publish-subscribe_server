@@ -1,4 +1,5 @@
 /*server responses*/
+
 #define CONNECTION_ESTABLILISHED "Connected\n"
 #define GET_LOGIN "Enter your login\n"
 #define GET_PASSWORD "Enter your password\n"
@@ -16,9 +17,12 @@
 #define SUBSCRIBTION_FAIL "Subscribtion failure\n"
 #define UNSUBSCRIBTION_SUCCES "Unubscribtion succesfull\n"
 #define UNSUBSCRIBTION_FAIL "Unsubscribtion failure\n"
+#define TAG_NOT_FOUND "Coudn't find this tag\n"
+#define MSG_BODY_REQUEST "Enter message text\n"
+#define MSG_CONFIRMATION "Message created\n"
 
+/*client side requests*/
 
-/*client requests*/
 #define REQUEST_MAX_LEN 13 /*size of the longest clien request*/
 #define REGISTER_REQUEST "Register\n"
 #define LOGIN_REQUEST "Login\n"
@@ -29,6 +33,7 @@
 #define LOGOUT "Logout\n"
 #define SUBSCRIBE_TAG "Subscribe\n"
 #define UNSUBSCRIBE "Unsubscribe\n"
+#define POST "New message\n"
 
 
           

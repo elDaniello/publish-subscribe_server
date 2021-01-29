@@ -40,11 +40,11 @@ void *ThreadBehavior(void *input)
 
         printf("%d\n", connectionsocketdescriptor);
         
-        char request[REQUEST_MAX_LEN]; 
+        char request[REQUEST_MAX_LEN]={0};
         
 
         handle_error(read(connectionsocketdescriptor, request, REQUEST_MAX_LEN));
-
+        printf("Got %s request from user %s\n", request, login);
         if(strcmp(request, LOGIN_REQUEST)==0){
 
             write_to_client(connectionsocketdescriptor, GET_LOGIN);
@@ -150,7 +150,7 @@ void *ThreadBehavior(void *input)
             write_to_client(connectionsocketdescriptor,SUBSCRIBTION_FAIL);
         }
         
-    }else if(strcmp(request, UNSUBSCRIBE)){
+    }else if(strcmp(request, UNSUBSCRIBE)==0){
         write_to_client(connectionsocketdescriptor, TAG_NAME_REQUEST);
         char tagname [TAG_NAME_LEN] = {0};
         handle_error(read(connectionsocketdescriptor, tagname, TAG_NAME_LEN));
@@ -160,9 +160,32 @@ void *ThreadBehavior(void *input)
         }else{
             write_to_client(connectionsocketdescriptor,UNSUBSCRIBTION_FAIL);
         }
+
+    }else if(strcmp(request, POST)==0){
+        write_to_client(connectionsocketdescriptor, TAG_NAME_REQUEST);
+        char tagname [TAG_NAME_LEN] = {0};
+        handle_error(read(connectionsocketdescriptor, tagname, TAG_NAME_LEN));
+        struct TAG * targetTag = getTagStructByName(thread_data->tags, tagname);
+
+        if(targetTag==NULL){
+            printf("Coudn't find tag %s, creating message failure.\n", tagname);
+            write_to_client(connectionsocketdescriptor, TAG_NOT_FOUND);
+        }else{
+            write_to_client(connectionsocketdescriptor, MSG_BODY_REQUEST);
+            char msg[MAX_MSG_LEN] = {0};
+            handle_error(read(connectionsocketdescriptor, msg, MAX_MSG_LEN));
+            if(!newMessage(targetTag, login, msg)){
+                write_to_client(connectionsocketdescriptor, ACCESS_DENIED); //when creating message fails - probably you don't have perrmision
+            }else{
+                write_to_client(connectionsocketdescriptor, MSG_CONFIRMATION);
+            
+            }
+        }
+
+
     }
-    else{
-        //printf("what do you mean?\n"); 
+    else{ //default 
+        printf("Request %s not recognised\n", request); 
         write_to_client(connectionsocketdescriptor, UNKNOWN_REQUEST);
         
     }
