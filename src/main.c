@@ -26,8 +26,8 @@
 void *ThreadBehavior(void *input)
 {
     pthread_detach(pthread_self());
-    char login[LOGIN_LEN];
-    char password[PASSWD_LEN];
+    char login[LOGIN_LEN]={0};
+    char password[PASSWD_LEN]={0};
     struct THREAD_DATA * thread_data = ((struct THREAD_DATA*)input);
     
     int connectionsocketdescriptor = thread_data->connectionsocketdescriptor;
@@ -73,11 +73,13 @@ void *ThreadBehavior(void *input)
 
             if(registerUser(thread_data->users, login, password)){
                 write_to_client(connectionsocketdescriptor, REGISTATION_SUCCES);
+                memset(request, 0, REQUEST_MAX_LEN);
             }else{
                 write_to_client(connectionsocketdescriptor, REGISTATION_FAIL);
-                memset(login, 0, LOGIN_LEN);
-                memset(password, 0, PASSWD_LEN);
             }
+            memset(login, 0, LOGIN_LEN);
+            memset(password, 0, PASSWD_LEN);
+            memset(request, 0, REQUEST_MAX_LEN);
         }
         else{
             write_to_client(connectionsocketdescriptor, UNKNOWN_REQUEST);
