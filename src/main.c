@@ -28,9 +28,9 @@ void *ThreadBehavior(void *input)
     pthread_detach(pthread_self());
     char login[LOGIN_LEN];
     char password[PASSWD_LEN];
-    struct THREAD_DATA thread_data = *((struct THREAD_DATA*)input);
+    struct THREAD_DATA * thread_data = ((struct THREAD_DATA*)input);
     
-    int connectionsocketdescriptor = thread_data.connectionsocketdescriptor;
+    int connectionsocketdescriptor = thread_data->connectionsocketdescriptor;
     
     bool login_status = false;
    
@@ -53,7 +53,7 @@ void *ThreadBehavior(void *input)
             write_to_client(connectionsocketdescriptor, GET_PASSWORD);
             handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
 
-            login_status=Login(thread_data.users, login, password);
+            login_status=Login(thread_data->users, login, password);
 
             if(login_status){
                 write_to_client(connectionsocketdescriptor, LOGIN_SUCCESFULL);
@@ -71,7 +71,7 @@ void *ThreadBehavior(void *input)
             write_to_client(connectionsocketdescriptor, GET_PASSWORD);
             handle_error(read(connectionsocketdescriptor, password, PASSWD_LEN));
 
-            if(registerUser(thread_data.users, login, password)){
+            if(registerUser(thread_data->users, login, password)){
                 write_to_client(connectionsocketdescriptor, REGISTATION_SUCCES);
             }else{
                 write_to_client(connectionsocketdescriptor, REGISTATION_FAIL);
@@ -96,7 +96,7 @@ void *ThreadBehavior(void *input)
         write_to_client(connectionsocketdescriptor, "choose name:\n");
         char tagname[TAG_NAME_LEN]={0};
         handle_error(read(connectionsocketdescriptor, tagname, TAG_NAME_LEN));
-        if(createNewTag(thread_data.tags, tagname, login)){
+        if(createNewTag(thread_data->tags, tagname, login)){
             write_to_client(connectionsocketdescriptor, "tag created\n");
         }else{
              write_to_client(connectionsocketdescriptor, "failure while creating tag\n");
@@ -104,34 +104,34 @@ void *ThreadBehavior(void *input)
         };
     
     }else if(strcmp(request, GET_FEED)==0){
-        int tagsCount = getUserSubscriptionsCount(*thread_data.tags, login);
+        int tagsCount = getUserSubscriptionsCount(*thread_data->tags, login);
         char tagsCountText[4];
         sprintf(tagsCountText, "%d", tagsCount);
         write_to_client(connectionsocketdescriptor, tagsCountText);
         write_to_client(connectionsocketdescriptor, "\n");
 
-     for ( int i = 0; i<thread_data.tags->tagsCount; i++){
-        if(isSubscriber(thread_data.tags->tag[i], login)){
-            write_to_client(connectionsocketdescriptor, thread_data.tags->tag[i].name);
+     for ( int i = 0; i<thread_data->tags->tagsCount; i++){
+        if(isSubscriber(thread_data->tags->tag[i], login)){
+            write_to_client(connectionsocketdescriptor, thread_data->tags->tag[i].name);
         }
     }
 
     }else if(strcmp(request, GET_TAGS_NAMES)==0){
         char tagsCount[4];
-        sprintf(tagsCount, "%ld", thread_data.tags->tagsCount);
+        sprintf(tagsCount, "%ld", thread_data->tags->tagsCount);
         //writes number of tags to read 
         write_to_client(connectionsocketdescriptor, tagsCount);
         write_to_client(connectionsocketdescriptor, "\n");
 
-        for(int i = 0; i < thread_data.tags->tagsCount; i++){
-            write_to_client(connectionsocketdescriptor, thread_data.tags->tag[i].name);
+        for(int i = 0; i < thread_data->tags->tagsCount; i++){
+            write_to_client(connectionsocketdescriptor, thread_data->tags->tag[i].name);
             //write_to_client(connectionsocketdescriptor, "\n");
         };
     }else if(strcmp(request, LOAD_TAG)==0){
         char tagname[TAG_NAME_LEN]={0};
         handle_error(read(connectionsocketdescriptor,tagname, TAG_NAME_LEN));
         //char msgCount[5];
-        //sprintf(msgCount, "%ld", thread_data.tags->tag[])
+        //sprintf(msgCount, "%ld", thread_data->tags->tag[])
 
     }else if(strcmp(request, LOGOUT)==0){
         write_to_client(connectionsocketdescriptor, LOGGED_OUT);
@@ -141,7 +141,7 @@ void *ThreadBehavior(void *input)
         write_to_client(connectionsocketdescriptor, TAG_NAME_REQUEST);
         char tagname [TAG_NAME_LEN] = {0};
         handle_error(read(connectionsocketdescriptor, tagname, TAG_NAME_LEN));
-        bool status = subscribe(thread_data.tags, tagname, login);
+        bool status = subscribe(thread_data->tags, tagname, login);
         if(status){
             write_to_client(connectionsocketdescriptor, SUBSCRIBTION_SUCCES);
         }else{
@@ -152,7 +152,7 @@ void *ThreadBehavior(void *input)
         write_to_client(connectionsocketdescriptor, TAG_NAME_REQUEST);
         char tagname [TAG_NAME_LEN] = {0};
         handle_error(read(connectionsocketdescriptor, tagname, TAG_NAME_LEN));
-        bool status = unsubscribe(thread_data.tags, tagname, login);
+        bool status = unsubscribe(thread_data->tags, tagname, login);
         if(status){
             write_to_client(connectionsocketdescriptor, UNSUBSCRIBTION_SUCCES);
         }else{
@@ -172,17 +172,17 @@ void *ThreadBehavior(void *input)
 }
 
 //funkcja obsługująca połączenie z nowym klientem
-void handleUser(int connection_socket_descriptor, struct USERS users, struct TAGS tags) {
+void handleUser(int connection_socket_descriptor, struct USERS * users, struct TAGS * tags) {
     int create_result = 0;
 
     pthread_t thread1;
 
     
-    struct THREAD_DATA thread_data;
-    thread_data.connectionsocketdescriptor=connection_socket_descriptor;
-    thread_data.users=&users;
-    thread_data.tags=&tags;
-    create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)&thread_data);
+    struct THREAD_DATA * thread_data = malloc(sizeof(struct THREAD_DATA));
+    thread_data->connectionsocketdescriptor=connection_socket_descriptor;
+    thread_data->users=users;
+    thread_data->tags=tags;
+    create_result = pthread_create(&thread1, NULL, ThreadBehavior, (void *)thread_data);
     handle_error(create_result);
     
 
@@ -194,15 +194,15 @@ int main(int argc, char* argv[])
 {   
     //read data login from file
 
-    struct TAGS tags;
-    initTags(&tags);
+    struct TAGS * tags = malloc(sizeof (struct TAGS));
+    initTags(tags);
+    
 
-
-    struct USERS users;
-    loadUserData(&users);
+    struct USERS * users =malloc(sizeof (struct USERS));
+    loadUserData(users);
     //test
 
-    createNewTag(&tags, "tag testowy\n", "admin\n");
+    createNewTag(tags, "tag testowy\n", "admin\n");
     //newMessage(getTagStructByName(&tags, "tag testowy"), "admin", "hejo");
     //newMessage(getTagStructByName(&tags, "tag testowy"), "admin", "hejo");
 
