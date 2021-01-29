@@ -131,10 +131,22 @@ void *ThreadBehavior(void *input)
         };
     }else if(strcmp(request, LOAD_TAG)==0){
         char tagname[TAG_NAME_LEN]={0};
+        write_to_client(connectionsocketdescriptor, TAG_NAME_REQUEST);
         handle_error(read(connectionsocketdescriptor,tagname, TAG_NAME_LEN));
-        //char msgCount[5];
-        //sprintf(msgCount, "%ld", thread_data->tags->tag[])
-
+        char msgCount[5]={0};
+        struct TAG * targetTag = malloc(sizeof(struct TAG));
+        targetTag = getTagStructByName(thread_data->tags, tagname);
+        if(targetTag==NULL){
+            write_to_client(connectionsocketdescriptor, TAG_NOT_FOUND);
+        }else{
+             sprintf(msgCount, "%ld", targetTag->messagesCount);
+             write_to_client(connectionsocketdescriptor, msgCount);
+             write_to_client(connectionsocketdescriptor, "\n");
+             for(int i=0; i<targetTag->messagesCount; i++){
+                write_to_client(connectionsocketdescriptor, targetTag->message[i].text);
+             }  
+        }
+       
     }else if(strcmp(request, LOGOUT)==0){
         write_to_client(connectionsocketdescriptor, LOGGED_OUT);
         break;
@@ -178,13 +190,11 @@ void *ThreadBehavior(void *input)
                 write_to_client(connectionsocketdescriptor, ACCESS_DENIED); //when creating message fails - probably you don't have perrmision
             }else{
                 write_to_client(connectionsocketdescriptor, MSG_CONFIRMATION);
-            
+        
             }
         }
 
-
-    }
-    else{ //default 
+    }else{ //default 
         printf("Request %s not recognised\n", request); 
         write_to_client(connectionsocketdescriptor, UNKNOWN_REQUEST);
         
