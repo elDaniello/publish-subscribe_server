@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define SERVER_PORT 1234
+#define SERVER_PORT 12345
 #define SERVER_ADDR "127.0.0.1"
 #define QUEUE_SIZE 30
 #define LOGIN_LEN 32
