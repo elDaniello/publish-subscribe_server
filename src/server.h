@@ -76,7 +76,6 @@ void initTags(struct TAGS * tags);
 //add user to tag subscribe list
 bool subscribe(struct TAGS * tags, char * tagName, char * user);
 
-
 //return TAG struct with given name
 struct TAG * getTagStructByName(struct TAGS * tags, char * name);
 
@@ -103,10 +102,8 @@ struct MESSAGE loadTag(struct TAG * tag);
 //check if user is subscribing tag
 bool isSubscriber(struct TAG  tag, char * name);
 
-
 //check how many tags users is subscribing
 int getUserSubscriptionsCount(struct TAGS tags, char * name);
-
 
 //try to unsubscribe user from tag if possible, if not return false
 bool unsubscribe(struct TAGS * tags, char * tagName, char * user);

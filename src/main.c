@@ -37,12 +37,9 @@ void *ThreadBehavior(void *input)
     do{
 
         write_to_client(connectionsocketdescriptor, CONNECTION_ESTABLILISHED);
-
-        printf("%d\n", connectionsocketdescriptor);
         
         char request[REQUEST_MAX_LEN]={0};
         
-
         handle_error(read(connectionsocketdescriptor, request, REQUEST_MAX_LEN));
         printf("Got %s request from user %s\n", request, login);
         if(strcmp(request, LOGIN_REQUEST)==0){
@@ -87,7 +84,7 @@ void *ThreadBehavior(void *input)
         }  
     }while(login_status==false);
     
-     //second char is \n, but we don't care about it
+
     
     while(true){ //when logged in
     char request[REQUEST_MAX_LEN]={0};
@@ -240,7 +237,7 @@ void handleUser(int connection_socket_descriptor, struct USERS * users, struct T
 
 int main(int argc, char* argv[])
 {   
-    //read data login from file
+    //initialize server state
 
     struct TAGS * tags = malloc(sizeof (struct TAGS));
     initTags(tags);
@@ -271,6 +268,8 @@ int main(int argc, char* argv[])
    listen_result = listen(server_socket_descriptor, QUEUE_SIZE);
    handle_error(listen_result);
 
+    printf("Starting server at %s:%d\n", SERVER_ADDR, SERVER_PORT);
+    
    while(1)
    {
        connection_socket_descriptor = accept(server_socket_descriptor, NULL, NULL);
