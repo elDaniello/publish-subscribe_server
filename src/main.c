@@ -86,7 +86,7 @@ void *ThreadBehavior(void *input)
             memset(request, 0, REQUEST_MAX_LEN);
         }  
     }while(login_status==false);
-    // TODO - send list of client's subscribed topics
+    
      //second char is \n, but we don't care about it
     
     while(true){ //when logged in
@@ -110,23 +110,31 @@ void *ThreadBehavior(void *input)
         char tagsCountText[4];
         sprintf(tagsCountText, "%d", tagsCount);
         write_to_client(connectionsocketdescriptor, tagsCountText);
-        write_to_client(connectionsocketdescriptor, "\n");
+        write_to_client(connectionsocketdescriptor, "\t");
 
      for ( int i = 0; i<thread_data->tags->tagsCount; i++){
         if(isSubscriber(thread_data->tags->tag[i], login)){
-            write_to_client(connectionsocketdescriptor, thread_data->tags->tag[i].name);
+            char tagName[TAG_NAME_LEN] = {0};
+            strncpy(tagName, thread_data->tags->tag[i].name, TAG_NAME_LEN);
+            replace_delimiter(tagName);
+            write_to_client(connectionsocketdescriptor, tagName);
         }
+       
     }
+     write_to_client(connectionsocketdescriptor, "\n");
 
     }else if(strcmp(request, GET_TAGS_NAMES)==0){
         char tagsCount[4];
         sprintf(tagsCount, "%ld", thread_data->tags->tagsCount);
         //writes number of tags to read 
         write_to_client(connectionsocketdescriptor, tagsCount);
-        write_to_client(connectionsocketdescriptor, "\n");
+        write_to_client(connectionsocketdescriptor, "\t");
 
         for(int i = 0; i < thread_data->tags->tagsCount; i++){
-            write_to_client(connectionsocketdescriptor, thread_data->tags->tag[i].name);
+             char name[TAG_NAME_LEN] = {0};
+            strncpy(name, thread_data->tags->tag[i].name, TAG_NAME_LEN);
+            replace_delimiter(name);
+            write_to_client(connectionsocketdescriptor, name);
             //write_to_client(connectionsocketdescriptor, "\n");
         };
     }else if(strcmp(request, LOAD_TAG)==0){
@@ -141,10 +149,15 @@ void *ThreadBehavior(void *input)
         }else{
              sprintf(msgCount, "%ld", targetTag->messagesCount);
              write_to_client(connectionsocketdescriptor, msgCount);
-             write_to_client(connectionsocketdescriptor, "\n");
+             write_to_client(connectionsocketdescriptor, "\t");
              for(int i=0; i<targetTag->messagesCount; i++){
-                write_to_client(connectionsocketdescriptor, targetTag->message[i].text);
-             }  
+                char text[MAX_MSG_LEN] = {0};
+                strncpy(text, targetTag->message[i].text, MAX_MSG_LEN);
+                replace_delimiter(text);
+                write_to_client(connectionsocketdescriptor, text);
+             }
+             write_to_client(connectionsocketdescriptor, "\n");  
+
         }
        
     }else if(strcmp(request, LOGOUT)==0){

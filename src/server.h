@@ -121,4 +121,7 @@ int getUserSubscriptionsCount(struct TAGS tags, char * name);
 //try to unsubscribe user from tag if possible, if not return false
 bool unsubscribe(struct TAGS * tags, char * tagName, char * user);
 
+//changes delimiter from newline to tab
+int replace_delimiter(char *str);
+
 #endif

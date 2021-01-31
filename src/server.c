@@ -24,6 +24,19 @@ if(exitCode<0){
 }
 };
 
+int replace_delimiter(char *str) {
+    char rep = '\t';
+    char orig = '\n';
+    char *ix = str;
+    int n = 0;
+    while((ix = strchr(ix, orig)) != NULL) {
+        *ix++ = rep;
+        n++;
+    }
+    return n;
+
+}
+
 void write_to_client(int clientsocket, const char* message){
  handle_error(write(clientsocket, message, strlen(message)));
 }

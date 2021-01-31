@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "../src/server.h"
 
 int TEST_COUNT = 0;
@@ -52,7 +53,7 @@ assert_true(subscribe(&tags, "tag testowy", "hackerman") && tags.tag[0].subsCoun
 assert_true(unsubscribe(&tags, "tag testowy", "hackerman") && tags.tag[0].subsCount==1, "unsubscribe test");
 assert_true(!unsubscribe(&tags, "tag testowy", "hackerman") && tags.tag[0].subsCount==1, "unsubscribe test 2 - can't unsubscribe tag that is not subscribed by user");
 assert_true(unsubscribe(&tags, "tag testowy", "admin") && tags.tag[0].subsCount==0, "unsubscribe test 1");
-}
+
 
 
 summary();
