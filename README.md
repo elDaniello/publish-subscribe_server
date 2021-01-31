@@ -1,12 +1,12 @@
 # Publish-subscribe server 1.0.0
 * By default runs server on localhost:12345 (can be changed in config.h file)
-* Run by typing `make run` or simply `make`
+* Run by typing ```make run``` or simply ```make```
 ## Test login credentials:
-* login: `admin\n`
-* password: `qwerty\n`
+* login: `admin`
+* password: `qwerty`
 ## Can handle both CLI and GUI clients
 * you can use [dedicated GUI client](https://github.com/j-magdalena/client.git)
-* or you can use command line unix nc (netcat)
+* or you can use command line unix ```nc``` (netcat)
 ***
 ## Custom protocol
 There are three types of commands:
