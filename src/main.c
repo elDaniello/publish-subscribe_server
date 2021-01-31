@@ -135,8 +135,9 @@ void *ThreadBehavior(void *input)
             strncpy(name, thread_data->tags->tag[i].name, TAG_NAME_LEN);
             replace_delimiter(name);
             write_to_client(connectionsocketdescriptor, name);
-            //write_to_client(connectionsocketdescriptor, "\n");
+        
         };
+        write_to_client(connectionsocketdescriptor, "\n");
     }else if(strcmp(request, LOAD_TAG)==0){
         char tagname[TAG_NAME_LEN]={0};
         write_to_client(connectionsocketdescriptor, TAG_NAME_REQUEST);
@@ -303,5 +304,8 @@ int main(int argc, char* argv[])
    }
 
    close(server_socket_descriptor);
+   free(tags);
+   free(users);
+   //free(thread_data);
    return(0);
 }
